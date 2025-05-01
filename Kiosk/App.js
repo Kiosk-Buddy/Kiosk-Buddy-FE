@@ -7,6 +7,7 @@ import WaitingScreen from './screens/WaitingScreen';
 import SignupScreen from './screens/SignupScreen';
 import LearningMethodScreen from './screens/LearningMethodScreen';
 import SimulationDifficultyScreen from './screens/SimulationDifficultyScreen';
+import TestDifficultyScreen from './screens/TestDifficultyScreen';
 
 const Stack = createStackNavigator();
 
@@ -18,6 +19,7 @@ function App() {
         <Stack.Screen name="Signup" component={SignupScreen} />
         <Stack.Screen name="LearningMethod" component={LearningMethodScreen} />
         <Stack.Screen name="SimulationDifficulty" component={SimulationDifficultyScreen} />
+        <Stack.Screen name="TestDifficulty" component={TestDifficultyScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
