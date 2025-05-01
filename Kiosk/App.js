@@ -5,15 +5,17 @@ import { NavigationContainer } from '@react-navigation/native';
 
 import WaitingScreen from './screens/WaitingScreen';
 import SignupScreen from './screens/SignupScreen';
+import LearningMethodScreen from './screens/LearningMethodScreen';
 
 const Stack = createStackNavigator();
 
 function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Waiting">
-        <Stack.Screen name="Waiting" component={WaitingScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
+      <Stack.Navigator initialRouteName="Waiting" screenoptions={{ headerShown: false }}>
+        <Stack.Screen name="Waiting" component={WaitingScreen} />
+        <Stack.Screen name="Signup" component={SignupScreen} />
+        <Stack.Screen name="LearningMethod" component={LearningMethodScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
