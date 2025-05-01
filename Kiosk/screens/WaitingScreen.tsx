@@ -1,9 +1,15 @@
+// WaitingScreen.tsx
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+
+
+type RootStackParamList = {
+  Signup: undefined;
+};
 
 export default function WaitingScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   return (
     <View style={styles.container}>
@@ -36,7 +42,14 @@ export default function WaitingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+interface Style {
+  container: ViewStyle;
+  button: ViewStyle;
+  buttonText: TextStyle;
+  signupText: TextStyle;
+}
+
+const styles = StyleSheet.create<Style>({
   container: {
     flex: 1,
     justifyContent: 'center',
