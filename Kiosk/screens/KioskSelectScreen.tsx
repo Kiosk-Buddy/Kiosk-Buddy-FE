@@ -19,7 +19,7 @@ import { useNavigation, NavigationProp } from '@react-navigation/native';
 // 네비게이션 타입 정의
 export type RootStackParamList = {
   KioskSelect: undefined;
-  Menu: undefined;        // menu 화면 추가
+  Home: undefined;        // menu 화면 추가
   FoodSelect: undefined;
 };
 
@@ -52,7 +52,7 @@ const KioskSelectScreen: React.FC = () => {
 
   const handleSelect = (id: number) => {
     if (id === 1) {
-      navigation.navigate('Menu');  // menu 화면으로 이동
+      navigation.navigate('Home');  // menu 화면으로 이동
     } else {
       alert('아직 준비되지 않은 키오스크입니다.');
     }

@@ -19,6 +19,8 @@ import PayprogressScreen from './screens/Payprogress';
 import PayselectionScreen from './screens/Payselection';
 import CounterScreen from './screens/Counter';
 import ReciptScreen from './screens/Recipt';
+import Home from './screens/home';
+import Location from './screens/location';
 
 import { CartProvider } from './contexts/CartContext';
 
@@ -40,6 +42,8 @@ export type RootStackParamList = {
   Payselection: undefined;
   Counter: undefined;
   Recipt: undefined;
+  Home: undefiend;
+  Location: undefiend;
 };
 
 // 🔹 Stack Navigator 설정
@@ -69,6 +73,8 @@ const App = () => (
         <Stack.Screen name="Payselection" component={PayselectionScreen} />
         <Stack.Screen name="Counter" component={CounterScreen} />
         <Stack.Screen name="Recipt" component={ReciptScreen} />
+        <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Location" component={Location} />
       </Stack.Navigator>
     </NavigationContainer>
   </CartProvider>
