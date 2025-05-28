@@ -1,151 +1,137 @@
 import React from 'react';
-import { StyleSheet, View, Text, Image, Pressable } from 'react-native';
+import { StyleSheet, View, Text, Image, Pressable, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Location'>;
 
 export type RootStackParamList = {
-    Menu: undefined;        // menu 화면 추가
-    Location: undefined;
+  Menu: undefined;
+  Location: undefined;
 };
 
 export default function HomeScreen() {
-    const navigation = useNavigation<HomeScreenNavigationProp>();
+  const navigation = useNavigation<HomeScreenNavigationProp>();
 
-    return (
-        <View style={styles.container}>
-            <Image
-                source={require('../assets/images/home-ad.png')} // 로컬 이미지
-                style={styles.topImage}
-                resizeMode="cover"
-            />
+  return (
+    <View style={styles.container}>
+      {/* 배경 이미지 */}
+      <Image
+        source={require('../assets/images/home-ad.png')}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
 
-            <Pressable
-                onPress={() =>  navigation.navigate('Location')}
-                style={styles.button}
-            >
-                <Text style={styles.buttonText}>주문하기</Text>
-            </Pressable>
+      {/* QR 박스 */}
+      <View style={styles.qrBox}>
+        <Text style={styles.qrText}>포인트를 적립하세요.{'\n'}결제 전 선택 필수</Text>
+        <Image
+          source={require('../assets/images/QR.png')}
+          style={styles.qrImage}
+        />
+      </View>
 
-            <Text style={styles.infoText}>
-                일반적인 영양 권장량은 일일 2,000 칼로리지만 필요한 칼로리는 다를 수 있습니다. 요청 시 추가 영양정보를 제공해 드립니다.
-            </Text>
+      {/* 주문하기 버튼 */}
+      <Pressable style={styles.orderButton} onPress={() => navigation.navigate('Location')}>
+        <Text style={styles.orderButtonText}>주문하기</Text>
+      </Pressable>
 
-            <View style={styles.container1}>
-                <View style={styles.boxOne}>
-                    <Text style={styles.boxText}>언어 선택</Text>
-                </View>
-                <View style={styles.boxTwo}>
-                    <Text style={styles.boxText}>도움기능</Text>
-                </View>
-            </View>
+      {/* 안내문구 */}
+      <Text style={styles.infoText}>
+        일반적인 영양 권장량은 일일 2,000 칼로리지만 필요한 칼로리는 다를 수 있습니다. 요청 시 추가 영양정보를 제공해 드립니다.
+      </Text>
 
-            <View style={styles.qrBox}>
-                <Text style={styles.bottomText}>포인트를 적립하세요.{'\n'}결제 전 선택 필수</Text>
-                <Image
-                    source={require('../assets/images/QR.png')} // PNG 파일 경로
-                    style={styles.bottomImage}
-                    resizeMode="contain"
-                />
-            </View>
-        </View>
-    );
+      {/* 하단 버튼들 */}
+      <View style={styles.bottomButtons}>
+        <Pressable style={styles.bottomBtn}>
+          <Text style={styles.bottomBtnText}>언어 선택</Text>
+        </Pressable>
+        <Pressable style={styles.bottomBtn}>
+          <Text style={styles.bottomBtnText}>도움기능</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
 }
 
+const { width, height } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
-    container1: {
-        flexDirection: 'row', // 가로로 배치
-        justifyContent: 'space-between', // 두 박스 간의 공간을 균등하게 배분
-        width: 180, // 부모 뷰의 가로 크기 100%로 설정
-        position: 'absolute',
-        bottom: 75, // 화면 하단으로 배치
-        right : 20,
-        paddingHorizontal: 10, // 양옆에 간격 추가
-    },
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'white',
-    },
-    button: {
-        width: 170,
-        height: 67,
-        backgroundColor: 'white',
-        borderRadius: 4,
-        borderWidth: 2,
-        borderColor: 'black',
-        right: 20,
-        bottom: 120,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 10,
-        position: 'absolute',
-    },
-    buttonText: {
-        fontSize: 20,
-    },
-    topImage: {
-        position: 'absolute',
-        top: 0,
-    },
-    infoText: {
-        fontSize: 10, // 폰트 크기 조정
-        width: 180,
-        color: '#000',
-        paddingHorizontal: 10, // 텍스트 양옆 여백 추가
-        marginBottom: 10,
-        right: 15,
-        position: 'absolute',
-        bottom: 10, // 하단에 위치
-        textAlign: 'justify', // 오른쪽 정렬
-    },
-    boxOne: {
-        borderWidth: 1,
-        borderColor: 'black',
-        width: 85,
-        height: 35,
-        backgroundColor: 'white',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 10, // 가로 간격을 추가하여 텍스트가 여유롭게 보이도록 설정
-    },
-    boxTwo: {
-        borderWidth: 1,
-        borderColor: 'black',
-        width: 85,
-        height: 35,
-        backgroundColor: 'white',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 10,
-    },
-    boxText: {
-        fontSize: 14,
-        color: '#000',
-    },
-    qrBox: {
-        position: 'absolute',  // 절대 위치로 설정
-        bottom: 0,            // 화면 하단에서 20px 띄우기
-        left: 10,              // 화면 왼쪽에서 10px 띄우기
-        width: 150,
-        height: 200,
-        backgroundColor: '#FEBB0D',
-        borderTopLeftRadius: 15,
-        borderTopRightRadius: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    bottomImage: {
-        width: 80,
-        height: 80,
-    },
-    bottomText: {
-        fontWeight: 'bold',
-        position: 'absolute',
-        top: 25,
-        fontSize: 10,
-        textAlign: 'center',
-    },
+  container: {
+    flex: 1,
+    position: 'relative',
+    backgroundColor: 'white',
+  },
+  backgroundImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  qrBox: {
+    position: 'absolute',
+    bottom: 180,
+    left: 20,
+    width: 140,
+    height: 180,
+    backgroundColor: '#FEBB0D',
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qrText: {
+    fontWeight: 'bold',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  qrImage: {
+    width: 70,
+    height: 70,
+    marginTop: 6,
+  },
+  orderButton: {
+    position: 'absolute',
+    bottom: 130,
+    right: 20,
+    backgroundColor: 'white',
+    borderWidth: 1.5,
+    borderColor: 'black',
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 4,
+  },
+  orderButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'black',
+  },
+  infoText: {
+    position: 'absolute',
+    bottom: 90,
+    right: 20,
+    fontSize: 10,
+    color: '#000',
+    width: width * 0.5,
+    textAlign: 'right',
+  },
+  bottomButtons: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  bottomBtn: {
+    width: 90,
+    height: 36,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomBtnText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
 });

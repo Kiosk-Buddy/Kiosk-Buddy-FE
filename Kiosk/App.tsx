@@ -42,8 +42,8 @@ export type RootStackParamList = {
   Payselection: undefined;
   Counter: undefined;
   Recipt: undefined;
-  Home: undefiend;
-  Location: undefiend;
+  Home: undefined;
+  Location: undefined;
 };
 
 // 🔹 Stack Navigator 설정

@@ -10,6 +10,7 @@ export type RootStackParamList = {
     Location: undefined;
 };
 
+
 const Location = () => {
     const navigation = useNavigation<LocationScreenNavigationProp>();
 
@@ -138,3 +139,5 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
 });
+
+export default Location;
