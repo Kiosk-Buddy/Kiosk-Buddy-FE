@@ -1,11 +1,16 @@
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+// src/screens/Recipt.tsx
+
+import React from 'react';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { RootStackParamList } from '../App';
-import React from 'react';
+import type { RootStackParamList } from '../App';
 
-export default function Payselection() {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+type ReciptNavProp = NativeStackNavigationProp<RootStackParamList, 'Recipt'>;
+
+export default function ReciptScreen() {
+  const navigation = useNavigation<ReciptNavProp>();
 
   return (
     <View style={styles.container}>
@@ -14,7 +19,7 @@ export default function Payselection() {
       {/* 안내 텍스트 */}
       <View style={styles.messageContainer}>
         <Text style={styles.messageText}>
-          결제가 완료되었습니다. {'\n'}영수증을 받아가세요
+          결제 완료되었습니다.{'\n'}영수증을 받아가세요
         </Text>
       </View>
 
@@ -25,9 +30,12 @@ export default function Payselection() {
         resizeMode="contain"
       />
 
-      {/* 버튼 묶음 */}
+      {/* 다음 단계 버튼 */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Counter')}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('OrderComplete')}
+        >
           <Text style={styles.buttonText}>다음단계</Text>
         </TouchableOpacity>
       </View>
@@ -47,7 +55,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 150,
     alignItems: 'center',
-    width: '100%'
+    width: '100%',
   },
   messageText: {
     fontSize: 22,

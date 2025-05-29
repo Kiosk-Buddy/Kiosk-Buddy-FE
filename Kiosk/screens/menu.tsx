@@ -1,6 +1,6 @@
-// src/screens/MenuScreen.tsx
+// src/screens/menu.tsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,21 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  ImageSourcePropType,
+  Modal,
+  Pressable,
   ViewStyle,
   TextStyle,
   ImageStyle,
+  ImageSourcePropType,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
+import { burgerMenuItems } from './burgerMenu'; // 경로 수정
 
-type MenuScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Menu'>;
+// Navigation 타입
+type MenuNav = NativeStackNavigationProp<RootStackParamList, 'Menu'>;
+type MenuRoute = RouteProp<RootStackParamList, 'Menu'>;
 
 interface MenuItem {
   name: string;
@@ -30,6 +35,7 @@ interface BurgerItem {
   image: ImageSourcePropType;
 }
 
+// 사이드 메뉴 아이템
 const sideMenuItems: MenuItem[] = [
   { name: '홈' },
   { name: '추천 메뉴' },
@@ -42,17 +48,30 @@ const sideMenuItems: MenuItem[] = [
   { name: '해피 스낵' },
 ];
 
-const burgerMenuItems: BurgerItem[] = [
-  { name: '빅맥', price: 'W5800', kcal: '582kcal', image: require('../assets/images/bigmacx3.png') },
-  { name: '더블 상하이 버거', price: 'W7000', kcal: '759kcal', image: require('../assets/images/doubleshangx3.png') },
-  { name: '상하이 버거', price: 'W6300', kcal: '501kcal', image: require('../assets/images/shangx3.png') },
-  { name: '1955 버거', price: 'W7200', kcal: '572kcal', image: require('../assets/images/1955x3.png') },
-  { name: '슈슈 버거', price: 'W4200', kcal: '409kcal', image: require('../assets/images/shux3.png') },
-  { name: '슈비버거', price: 'W6600', kcal: '540kcal', image: require('../assets/images/shubix3.png') },
-];
+export default function MenuScreen() {
+  const navigation = useNavigation<MenuNav>();
+  const { scenario = 'easy', missionItems = [] } = useRoute<MenuRoute>().params;
 
-const MenuScreen: React.FC = () => {
-  const navigation = useNavigation<MenuScreenNavigationProp>();
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showMissionModal, setShowMissionModal] = useState(false);
+
+  // 난이도·미션에 맞는 텍스트 생성 함수
+  const getMissionText = () => {
+    // easy: 단품 1개
+    if (scenario === 'easy' && missionItems.length === 1) {
+      return `미션: ${missionItems[0]} 단품 1개 주문하기`;
+    }
+    // medium: 세트 + 단품
+    if (scenario === 'medium' && missionItems.length === 2) {
+      return `미션:\n1) ${missionItems[0]} 세트 1개 주문하기\n2) ${missionItems[1]} 단품 1개 주문하기`;
+    }
+    // hard: 세트 + 단품 + 사이드 + 음료 + 추가
+    if (scenario === 'hard' && missionItems.length === 5) {
+      const [setBurger, singleBurger, sideItem, drinkItem, extraItem] = missionItems;
+      return `미션:\n1) ${setBurger} 세트 1개 주문하기\n   - 포함 항목: ${sideItem}, ${drinkItem}, ${extraItem}\n2) ${singleBurger} 단품 1개 주문하기`;
+    }
+    return '미션 정보가 없습니다.';
+  };
 
   const renderSideMenuItem = ({ item }: { item: MenuItem }) => (
     <TouchableOpacity style={styles.sideMenuItem}>
@@ -62,17 +81,43 @@ const MenuScreen: React.FC = () => {
 
   const renderBurgerItem = ({ item }: { item: BurgerItem }) => {
     const priceNumber = Number(item.price.replace(/\D/g, ''));
+    const isWrongEasy =
+      scenario === 'easy' &&
+      missionItems.length === 1 &&
+      item.name !== missionItems[0];
+    const isWrongMedium =
+      scenario === 'medium' &&
+      missionItems.length === 2 &&
+      !missionItems.includes(item.name);
+    const isWrongHard =
+      scenario === 'hard' &&
+      missionItems.length === 5 &&
+      !missionItems.includes(item.name);
+    const isWrong = isWrongEasy || isWrongMedium || isWrongHard;
+
+    const handlePress = () => {
+      if (isWrong) {
+        setShowErrorModal(true);
+        return;
+      }
+      let requiredType: 'set' | 'single';
+      if (scenario === 'easy') {
+        requiredType = 'single';
+      } else {
+        requiredType =
+          item.name === missionItems[0] ? 'set' : 'single';
+      }
+      navigation.navigate('ChooseSetOrSingle', {
+        selectedBurger: item.name,
+        singlePrice: priceNumber,
+        scenario,
+        missionItems,
+        requiredType,
+      });
+    };
+
     return (
-      <TouchableOpacity
-        style={styles.burgerItem}
-        onPress={() => {
-          console.log('🍔', item.name, 'pressed');
-          navigation.navigate('ChooseSetOrSingle', {
-            selectedBurger: item.name,
-            singlePrice: priceNumber,
-          });
-        }}
-      >
+      <TouchableOpacity style={styles.burgerItem} onPress={handlePress}>
         <Image
           source={item.image}
           style={styles.burgerImage}
@@ -90,27 +135,92 @@ const MenuScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.sideMenu}>
-        <FlatList<MenuItem>
-          data={sideMenuItems}
-          renderItem={renderSideMenuItem}
-          keyExtractor={(_, index) => index.toString()}
+      {/* 상단 로고 헤더 */}
+      <View style={styles.header}>
+        <Image
+          source={require('../assets/images/md-logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
         />
       </View>
 
-      <View style={styles.burgerMenu}>
-        <FlatList<BurgerItem>
-          data={burgerMenuItems}
-          renderItem={renderBurgerItem}
-          keyExtractor={(_, index) => index.toString()}
-          numColumns={3}
-        />
+      {/* 페이지 타이틀 */}
+      <View style={styles.titleContainer}>
+        <Text style={styles.pageTitle}>버거</Text>
+        <Text style={styles.pageSubtitle}>
+          아래에서 세부내용을 확인하세요.
+        </Text>
       </View>
+
+      {/* 사이드바＋버거리스트 래퍼 */}
+      <View style={styles.content}>
+        <View style={styles.sideMenu}>
+          <FlatList<MenuItem>
+            data={sideMenuItems}
+            renderItem={renderSideMenuItem}
+            keyExtractor={(_, index) => index.toString()}
+          />
+        </View>
+        <View style={styles.burgerMenu}>
+          <FlatList<BurgerItem>
+            data={burgerMenuItems}
+            renderItem={renderBurgerItem}
+            keyExtractor={(_, index) => index.toString()}
+            numColumns={3}
+          />
+        </View>
+      </View>
+
+      {/* 잘못된 선택 모달 */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={showErrorModal}
+        onRequestClose={() => setShowErrorModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>잘못된 선택입니다</Text>
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => setShowErrorModal(false)}
+            >
+              <Text style={styles.modalButtonText}>확인</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 미션 보기 모달 */}
+      <Modal
+        transparent
+        animationType="slide"
+        visible={showMissionModal}
+        onRequestClose={() => setShowMissionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>{getMissionText()}</Text>
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => setShowMissionModal(false)}
+            >
+              <Text style={styles.modalButtonText}>닫기</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 오른쪽 하단 미션 보기 버튼 */}
+      <TouchableOpacity
+        style={styles.missionButton}
+        onPress={() => setShowMissionModal(true)}
+      >
+        <Text style={styles.missionButtonText}>미션 보기</Text>
+      </TouchableOpacity>
     </View>
   );
-};
-
-export default MenuScreen;
+}
 
 const styles = StyleSheet.create<{
   container: ViewStyle;
@@ -123,17 +233,57 @@ const styles = StyleSheet.create<{
   burgerInfo: ViewStyle;
   burgerName: TextStyle;
   burgerPrice: TextStyle;
+  modalOverlay: ViewStyle;
+  modalContent: ViewStyle;
+  modalText: TextStyle;
+  modalButton: ViewStyle;
+  modalButtonText: TextStyle;
+  header: ViewStyle;
+  logo: ImageStyle;
+  titleContainer: ViewStyle;
+  pageTitle: TextStyle;
+  pageSubtitle: TextStyle;
+  content: ViewStyle;
+  missionButton: ViewStyle;
+  missionButtonText: TextStyle;
 }>({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    height: 80,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 140,
+    height: 80,
+  },
+  titleContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  pageSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  content: {
+    flex: 1,
     flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginTop: 16,
   },
   sideMenu: {
-    marginTop: 50,
-    width: 120,
+    width: 100,
     backgroundColor: 'white',
-    paddingVertical: 20,
-    paddingHorizontal: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
   },
   sideMenuItem: {
     paddingVertical: 15,
@@ -144,10 +294,11 @@ const styles = StyleSheet.create<{
     fontSize: 12,
   },
   burgerMenu: {
-    marginTop: 150,
-    backgroundColor: 'white',
     flex: 1,
-    padding: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingLeft: 16,
+    justifyContent: 'flex-start',
   },
   burgerItem: {
     width: '30%',
@@ -170,11 +321,51 @@ const styles = StyleSheet.create<{
   burgerName: {
     fontSize: 12,
     fontWeight: 'bold',
-    textAlign: 'left',
   },
   burgerPrice: {
     fontSize: 10,
-    color: 'black',
-    textAlign: 'left',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+   	alignItems: 'center',
+  },
+  modalContent: {
+    width: 280,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: '#28a745',
+    borderRadius: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  missionButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#28a745',
+    borderRadius: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    elevation: 4,
+  },
+  missionButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });

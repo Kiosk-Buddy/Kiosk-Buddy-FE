@@ -1,49 +1,42 @@
-// loading.tsx
+// src/screens/loading.tsx
 import React, { useEffect } from 'react';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { RootStackParamList } from '../App';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
 
-type LoadingScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Loading'>;
+type LoadingNavProp = NativeStackNavigationProp<RootStackParamList, 'Loading'>;
 
-export default function Loading() {
-  const navigation = useNavigation<LoadingScreenNavigationProp>();
+export default function LoadingScreen() {
+  const navigation = useNavigation<LoadingNavProp>();
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      // 2초 뒤에 'Waiting' 화면으로 교체
       navigation.replace('Waiting');
-    }, 3000);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, [navigation]);
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" backgroundColor="#ffffff" />
-      <ActivityIndicator size="large" color="red" style={styles.spinner} />
-      <Text style={styles.message}>잠시만 기다려주세요...</Text>
+      <ActivityIndicator size="large" color="#E60012" />
+      <Text style={styles.text}>잠시만 기다려주세요...</Text>
     </View>
   );
 }
 
-
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFF',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
   },
-  spinner: {
-    transform: [{ scale: 2 }],
-    marginBottom: 50,
-  },
-  message: {
-    fontSize: 18,
+  text: {
+    marginTop: 12,
+    fontSize: 16,
     color: '#333',
-    fontWeight: 'bold',
   },
 });

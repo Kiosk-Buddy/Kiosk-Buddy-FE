@@ -9,32 +9,25 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
+  Alert,
   ViewStyle,
   TextStyle,
   ImageStyle,
   ImageSourcePropType,
 } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
+import type { RootStackParamList } from '../App';
 
-// 네비게이션 타입 정의
-export type RootStackParamList = {
-  KioskSelect: undefined;
-  Home: undefined;        // menu 화면 추가
-  FoodSelect: undefined;
-};
+type KioskSelectScreenNavigationProp =
+  NavigationProp<RootStackParamList, 'KioskSelect'>;
 
-type KioskSelectScreenNavigationProp = NavigationProp<
-  RootStackParamList,
-  'KioskSelect'
->;
+const screenWidth = Dimensions.get('window').width;
+const itemSize = screenWidth / 2 - 40;
 
 interface KioskItem {
   id: number;
   image: ImageSourcePropType;
 }
-
-const screenWidth = Dimensions.get('window').width;
-const itemSize = screenWidth / 2 - 40;
 
 const kiosks: KioskItem[] = [
   { id: 1, image: require('../assets/images/burger.png') },
@@ -47,14 +40,15 @@ const kiosks: KioskItem[] = [
   { id: 8, image: require('../assets/images/kiosk-placeholder.png') },
 ];
 
-const KioskSelectScreen: React.FC = () => {
+export default function KioskSelectScreen() {
   const navigation = useNavigation<KioskSelectScreenNavigationProp>();
 
   const handleSelect = (id: number) => {
     if (id === 1) {
-      navigation.navigate('Home');  // menu 화면으로 이동
+      // “시험 난이도 선택” 화면으로 이동
+      navigation.navigate('TestDifficulty');
     } else {
-      alert('아직 준비되지 않은 키오스크입니다.');
+      Alert.alert('알림', '아직 준비되지 않은 키오스크입니다.');
     }
   };
 
@@ -74,9 +68,7 @@ const KioskSelectScreen: React.FC = () => {
       </View>
     </ScrollView>
   );
-};
-
-export default KioskSelectScreen;
+}
 
 const styles = StyleSheet.create<{
   scrollContainer: ViewStyle;

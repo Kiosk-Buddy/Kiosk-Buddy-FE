@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Modal,
+  Pressable,
   ViewStyle,
   TextStyle,
   ImageStyle,
@@ -27,12 +29,22 @@ const spriteIcon: ImageSourcePropType = require('../assets/images/sprite.png');
 const cheeseIcon: ImageSourcePropType = require('../assets/images/cheesesticks.png');
 
 export default function SelectSetDetailsScreen({ navigation, route }: Props) {
-  const { selectedBurger, setPrice } = route.params;
+  // scenario, missionItems를 함께 꺼냅니다
+ const {
+   selectedBurger,
+   setPrice,
+   scenario,
+   missionItems,
+   requiredSide,
+   requiredDrink,
+   requiredExtra,
+ } = route.params;
   const { addToCart } = useCart();
 
   const [fries, setFries] = useState<string>('');
   const [drink, setDrink] = useState<string>('');
   const [extra, setExtra] = useState<string>('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   const basePrice = setPrice ?? 6200;
   const extraPrices: Record<string, number> = { '치즈 스틱': 3500 };
@@ -40,13 +52,19 @@ export default function SelectSetDetailsScreen({ navigation, route }: Props) {
   const totalPrice = basePrice + addedExtra;
 
   const handleConfirm = () => {
-    const items = [fries, drink];
-    if (!fries || !drink) return;
-    if (extra) items.push(extra);
-    const itemName = `${selectedBurger} 세트 (${items.join(' + ')})`;
-    addToCart({ name: itemName, price: totalPrice });
-    navigation.navigate('Cart');
-  };
+   // 1) 사이드와 음료 반드시 선택됐는지
+   if (!fries || !drink) return;
+   // 2) 미션과 정확히 일치하는지 검사
+   if (fries !== requiredSide || drink !== requiredDrink || extra !== requiredExtra) {
+     setShowErrorModal(true);
+     return;
+   }
+   // 3) 올바른 선택일 때만 장바구니 추가
+   const items = [fries, drink, extra].filter(Boolean);
+   const itemName = `${selectedBurger} 세트 (${items.join(' + ')})`;
+   addToCart({ name: itemName, price: totalPrice });
+   navigation.navigate('Cart', { scenario, missionItems });
+ };
 
   const renderOption = (
     icon: ImageSourcePropType | null,
@@ -80,31 +98,51 @@ export default function SelectSetDetailsScreen({ navigation, route }: Props) {
         </Text>
       </View>
 
-      {/* 사이드 */}
+      {/* 사이드 선택 */}
       <View style={styles.instructionBox}>
         <View style={styles.instructionHighlight} />
         <Text style={styles.instructionText}>세트메뉴 사이드를 선택하세요</Text>
       </View>
       <View style={styles.optionsContainer}>
-        {renderOption(friesIcon, '감자튀김', fries === '감자튀김', () => setFries('감자튀김'))}
-        {renderOption(coleslawIcon, '코울슬로', fries === '코울슬로', () => setFries('코울슬로'))}
+        {renderOption(
+          friesIcon,
+          '감자튀김',
+          fries === '감자튀김',
+          () => setFries('감자튀김')
+        )}
+        {renderOption(
+          coleslawIcon,
+          '코울슬로',
+          fries === '코울슬로',
+          () => setFries('코울슬로')
+        )}
       </View>
 
       <View style={styles.divider} />
 
-      {/* 음료 */}
+      {/* 음료 선택 */}
       <View style={styles.instructionBox}>
         <View style={styles.instructionHighlight} />
         <Text style={styles.instructionText}>세트메뉴 음료를 선택하세요</Text>
       </View>
       <View style={styles.optionsContainer}>
-        {renderOption(colaIcon, '콜라', drink === '콜라', () => setDrink('콜라'))}
-        {renderOption(spriteIcon, '사이다', drink === '사이다', () => setDrink('사이다'))}
+        {renderOption(
+          colaIcon,
+          '콜라',
+          drink === '콜라',
+          () => setDrink('콜라')
+        )}
+        {renderOption(
+          spriteIcon,
+          '사이다',
+          drink === '사이다',
+          () => setDrink('사이다')
+        )}
       </View>
 
       <View style={styles.divider} />
 
-      {/* 추가 */}
+      {/* 추가 제품 선택 */}
       <View style={styles.instructionBox}>
         <View style={styles.instructionHighlight} />
         <Text style={styles.instructionText}>추가제품을 선택하세요</Text>
@@ -121,12 +159,35 @@ export default function SelectSetDetailsScreen({ navigation, route }: Props) {
       </View>
 
       <TouchableOpacity
-        style={[styles.confirmBtn, !(fries && drink) && styles.confirmBtnDisabled]}
+        style={[
+          styles.confirmBtn,
+          !(fries && drink) && styles.confirmBtnDisabled,
+        ]}
         onPress={handleConfirm}
         disabled={!(fries && drink)}
       >
         <Text style={styles.confirmText}>세트 선택 완료</Text>
       </TouchableOpacity>
+
+      {/* 잘못된 선택 모달 */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={showErrorModal}
+        onRequestClose={() => setShowErrorModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>잘못된 선택입니다</Text>
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => setShowErrorModal(false)}
+            >
+              <Text style={styles.modalButtonText}>확인</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -151,24 +212,88 @@ const styles = StyleSheet.create<{
   confirmBtn: ViewStyle;
   confirmBtnDisabled: ViewStyle;
   confirmText: TextStyle;
-}>({
+  modalOverlay: ViewStyle;
+  modalContent: ViewStyle;
+  modalText: TextStyle;
+  modalButton: ViewStyle;
+  modalButtonText: TextStyle;
+}>( {
   container: { flex: 1, backgroundColor: '#fff', padding: 20 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
   logo: { width: 36, height: 36, resizeMode: 'contain', marginRight: 8 },
   headerTitle: { fontSize: 24, fontWeight: '700', color: '#333' },
   headerPrice: { fontSize: 24, fontWeight: '700', color: '#DA291C' },
-  instructionBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#DDD', borderRadius: 6, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 12 },
-  instructionHighlight: { width: 4, height: '100%', backgroundColor: '#FFC72C', borderRadius: 2, marginRight: 8 },
+  instructionBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  instructionHighlight: {
+    width: 4,
+    height: '100%',
+    backgroundColor: '#FFC72C',
+    borderRadius: 2,
+    marginRight: 8,
+  },
   instructionText: { fontSize: 16, color: '#333' },
-  optionsContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  optionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
   divider: { height: 1, backgroundColor: '#DDD', marginVertical: 16 },
-  optionCard: { width: '45%', height: 120, borderWidth: 1, borderColor: '#DDD', borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  optionCard: {
+    width: '45%',
+    height: 120,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   optionCardSelected: { borderColor: '#FFC72C', backgroundColor: '#FFF8E1' },
   optionIcon: { width: 80, height: 80, resizeMode: 'contain', marginBottom: 4 },
-  optionLabel: { fontSize: 16, fontWeight: '600', color: '#333', textAlign: 'center' },
+  optionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
   optionLabelSelected: { color: '#DA291C', fontWeight: '700' },
   optionPrice: { fontSize: 14, color: '#DA291C', marginTop: 4 },
-  confirmBtn: { backgroundColor: '#FFC72C', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginTop: 10 },
+  confirmBtn: {
+    backgroundColor: '#FFC72C',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
   confirmBtnDisabled: { backgroundColor: '#F0E68C' },
   confirmText: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-});
+  modalOverlay: {
+   flex: 1,
+   backgroundColor: 'rgba(0,0,0,0.5)',
+   justifyContent: 'center',
+   alignItems: 'center',
+ },
+ modalContent: {
+   width: 250,
+   backgroundColor: '#fff',
+   borderRadius: 8,
+   padding: 20,
+   alignItems: 'center',
+ },
+ modalText: { fontSize: 18, marginBottom: 20 },
+ modalButton: {
+   backgroundColor: '#28a745',
+   borderRadius: 5,
+   paddingHorizontal: 20,
+   paddingVertical: 8,
+ },
+ modalButtonText: { color: '#fff', fontSize: 16 },
+} );
