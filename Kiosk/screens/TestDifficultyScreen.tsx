@@ -1,75 +1,71 @@
 // src/screens/TestDifficultyScreen.tsx
-import React from 'react'
+import React from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Image,
-} from 'react-native'
-import { useNavigation } from '@react-navigation/native'
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import type { RootStackParamList } from '../App'
-import { burgerMenuItems } from './burgerMenu'
+  Platform,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
+import { burgerMenuItems } from './burgerMenu';
 
 type NavProp = NativeStackNavigationProp<
   RootStackParamList,
-  'TestDifficulty'
->
+  'TestDifficultyScreen'
+>;
 
 export default function TestDifficultyScreen() {
-  const navigation = useNavigation<NavProp>()
+  const navigation = useNavigation<NavProp>();
 
   const pickRandomBurger = () => {
-    const idx = Math.floor(Math.random() * burgerMenuItems.length)
-    return burgerMenuItems[idx].name
-  }
+    const idx = Math.floor(Math.random() * burgerMenuItems.length);
+    return burgerMenuItems[idx].name;
+  };
 
   const handleSelect = (label: '쉬움' | '중간' | '어려움') => {
     const scenario =
-      label === '쉬움' ? 'easy' : label === '중간' ? 'medium' : 'hard'
-    // 랜덤으로 미션 버거 하나 뽑기
-    const missionItems = [pickRandomBurger()]
+      label === '쉬움' ? 'easy' : label === '중간' ? 'medium' : 'hard';
 
-    // 쉬움은 SingleOrderScenario, 그 외는 Set/Full 시나리오로
     if (label === '쉬움') {
-      navigation.navigate('SingleOrderScenario', { scenario, missionItems })
+      navigation.navigate('SingleOrderScenario', { scenario, missionItems: [pickRandomBurger()], mode: 'test', });
     } else if (label === '중간') {
-      // 예시로 두 가지 버거 미션
       navigation.navigate('SetOrderScenario', {
-        scenario,
-        missionItems: [pickRandomBurger(), pickRandomBurger()],
-      })
+      scenario,
+      missionItems: [pickRandomBurger(), pickRandomBurger()],
+      mode: 'test',
+    });
+
     } else {
-    // hard: 버거 2개 + 음료 1개 + 추가메뉴 1개
-    const names = burgerMenuItems.map(b => b.name);
-    const shuffled = [...names].sort(() => Math.random() - 0.5);
-    const [burgerA, burgerB] = shuffled.slice(0, 2);
+      const names = burgerMenuItems.map(b => b.name);
+      const shuffled = [...names].sort(() => Math.random() - 0.5);
+      const [burgerA, burgerB] = shuffled.slice(0, 2);
 
-    // 음료와 추가 메뉴 (필요하면 랜덤 또는 고정)
-    const sides = ['감자튀김', '코울슬로'];
-    
-    const drinks = ['콜라', '사이다'];
-    const extras = ['치즈 스틱'];
-    const side = sides[Math.floor(Math.random() * sides.length)];
-    const drink = drinks[Math.floor(Math.random() * drinks.length)];
-    const extra = extras[0];
+      const sides = ['감자튀김', '코울슬로'];
+      const drinks = ['콜라', '사이다'];
+      const extras = ['치즈 스틱'];
+      const side = sides[Math.floor(Math.random() * sides.length)];
+      const drink = drinks[Math.floor(Math.random() * drinks.length)];
+      const extra = extras[0];
 
-    const missionItemsForHard = [burgerA, burgerB, side, drink, extra];
-    navigation.navigate('FullOrderScenario', {
+      const missionItemsForHard = [burgerA, burgerB, side, drink, extra];
+      navigation.navigate('FullOrderScenario', {
       scenario,
       missionItems: missionItemsForHard,
+      mode: 'test',
+      
     });
-  }
-};
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Image
-            source={require('../assets/back.png')}
-            style={styles.icon}
-          />
+          <Image source={require('../assets/back.png')} style={styles.icon} />
         </TouchableOpacity>
       </View>
 
@@ -86,12 +82,16 @@ export default function TestDifficultyScreen() {
         ))}
       </View>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 20 },
-  header: { height: 60, justifyContent: 'center' },
+  header: {
+    height: 60,
+    justifyContent: 'center',
+    marginTop: Platform.OS === 'ios' ? 60 : 30, // ✅ 상단 마진
+  },
   icon: { width: 24, height: 24 },
   box: {
     backgroundColor: '#eee',
@@ -109,4 +109,4 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   btnText: { fontSize: 18 },
-})
+});

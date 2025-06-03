@@ -29,6 +29,7 @@ export default function SingleOrderScenario() {
     navigation.navigate('Menu', {
       scenario,
       missionItems,
+      mode: 'test',
     });
   };
 

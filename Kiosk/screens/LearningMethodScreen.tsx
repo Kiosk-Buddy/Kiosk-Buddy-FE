@@ -1,15 +1,13 @@
-// LearningMethodScreen.tsx
+// src/screens/LearningMethodScreen.tsx
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
 
 export default function LearningMethodScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       {/* 상단 바 */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => {
-          // TODO: 이전 화면으로 이동 - 구현되면 여기에 navigation 추가
-        }}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Image source={require('../assets/back.png')} style={styles.icon} />
         </TouchableOpacity>
       </View>
@@ -20,7 +18,7 @@ export default function LearningMethodScreen({ navigation }: any) {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('LearningDifficulty')}
+          onPress={() => navigation.navigate('SimulationDifficultyScreen', { mode: 'learn' })}
         >
           <Image source={require('../assets/study.png')} style={styles.buttonIcon} />
           <Text style={styles.buttonText}>따라하기</Text>
@@ -28,7 +26,7 @@ export default function LearningMethodScreen({ navigation }: any) {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('TestDifficulty')}
+          onPress={() => navigation.navigate('TestDifficultyScreen', { mode: 'test' })}
         >
           <Image source={require('../assets/test.png')} style={styles.buttonIcon} />
           <Text style={styles.buttonText}>시험 보기</Text>
@@ -40,7 +38,11 @@ export default function LearningMethodScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 20 },
-  header: { height: 60, justifyContent: 'center' },
+  header: {
+    height: 60,
+    justifyContent: 'center',
+    marginTop: Platform.OS === 'ios' ? 60 : 30,
+  },
   icon: { width: 24, height: 24 },
   box: {
     backgroundColor: '#eee',

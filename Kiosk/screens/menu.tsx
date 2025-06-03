@@ -1,5 +1,4 @@
 // src/screens/menu.tsx
-
 import React, { useState } from 'react';
 import {
   View,
@@ -10,17 +9,15 @@ import {
   Image,
   Modal,
   Pressable,
-  ViewStyle,
-  TextStyle,
-  ImageStyle,
-  ImageSourcePropType,
+  Dimensions,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
-import { burgerMenuItems } from './burgerMenu'; // 경로 수정
+import { burgerMenuItems } from './burgerMenu';
 
-// Navigation 타입
+const { width, height } = Dimensions.get('window');
+
 type MenuNav = NativeStackNavigationProp<RootStackParamList, 'Menu'>;
 type MenuRoute = RouteProp<RootStackParamList, 'Menu'>;
 
@@ -28,44 +25,36 @@ interface MenuItem {
   name: string;
 }
 
-interface BurgerItem {
-  name: string;
-  price: string;
-  kcal?: string;
-  image: ImageSourcePropType;
-}
-
-// 사이드 메뉴 아이템
 const sideMenuItems: MenuItem[] = [
-  { name: '홈' },
-  { name: '추천 메뉴' },
-  { name: '버거' },
-  { name: '해피밀' },
-  { name: '사이드' },
-  { name: '커피' },
-  { name: '디저트' },
-  { name: '음료' },
-  { name: '해피 스낵' },
+  { name: '홈' }, { name: '추천 메뉴' }, { name: '버거' },
+  { name: '해피밀' }, { name: '사이드' }, { name: '커피' },
+  { name: '디저트' }, { name: '음료' }, { name: '해피 스낵' },
 ];
 
 export default function MenuScreen() {
   const navigation = useNavigation<MenuNav>();
-  const { scenario = 'easy', missionItems = [] } = useRoute<MenuRoute>().params;
+  const {
+    scenario = 'easy',
+    missionItems = [],
+    mode = 'test',
+    currentStep = 0, // learn-hard
+  } = useRoute<MenuRoute>().params;
 
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showMissionModal, setShowMissionModal] = useState(false);
 
-  // 난이도·미션에 맞는 텍스트 생성 함수
   const getMissionText = () => {
-    // easy: 단품 1개
+    if (mode === 'learn') {
+      return scenario === 'medium'
+        ? '미션:\n빅맥 세트(감자튀김, 콜라) 1개 포장 주문'
+        : '미션:\n1) 빅맥 세트(감자튀김, 콜라)\n2) 빅맥 단품\n3) 빅맥 세트(코울슬로, 사이다, 치즈스틱)\n각각 1개 포장 주문';
+    }
     if (scenario === 'easy' && missionItems.length === 1) {
       return `미션: ${missionItems[0]} 단품 1개 주문하기`;
     }
-    // medium: 세트 + 단품
     if (scenario === 'medium' && missionItems.length === 2) {
       return `미션:\n1) ${missionItems[0]} 세트 1개 주문하기\n2) ${missionItems[1]} 단품 1개 주문하기`;
     }
-    // hard: 세트 + 단품 + 사이드 + 음료 + 추가
     if (scenario === 'hard' && missionItems.length === 5) {
       const [setBurger, singleBurger, sideItem, drinkItem, extraItem] = missionItems;
       return `미션:\n1) ${setBurger} 세트 1개 주문하기\n   - 포함 항목: ${sideItem}, ${drinkItem}, ${extraItem}\n2) ${singleBurger} 단품 1개 주문하기`;
@@ -73,60 +62,88 @@ export default function MenuScreen() {
     return '미션 정보가 없습니다.';
   };
 
-  const renderSideMenuItem = ({ item }: { item: MenuItem }) => (
-    <TouchableOpacity style={styles.sideMenuItem}>
-      <Text style={styles.sideMenuText}>{item.name}</Text>
-    </TouchableOpacity>
-  );
+  const isHighlight = (itemName: string) => {
+    if (mode !== 'learn') return false;
+    if (scenario === 'medium') {
+      return itemName === '빅맥';
+    }
+    if (scenario === 'hard') {
+      if (currentStep === 0 || currentStep === 2) return itemName === '빅맥';
+      if (currentStep === 1) return itemName === '빅맥'; // 단품이지만 이름 같음
+    }
+    return false;
+  };
 
-  const renderBurgerItem = ({ item }: { item: BurgerItem }) => {
+  const shouldShowBubble = () => {
+    if (mode !== 'learn') return false;
+    if (scenario === 'medium') return true;
+    if (scenario === 'hard') return currentStep <= 2;
+    return false;
+  };
+
+  const renderBurgerItem = ({ item }: any) => {
     const priceNumber = Number(item.price.replace(/\D/g, ''));
-    const isWrongEasy =
-      scenario === 'easy' &&
-      missionItems.length === 1 &&
-      item.name !== missionItems[0];
-    const isWrongMedium =
-      scenario === 'medium' &&
-      missionItems.length === 2 &&
-      !missionItems.includes(item.name);
-    const isWrongHard =
-      scenario === 'hard' &&
-      missionItems.length === 5 &&
-      !missionItems.includes(item.name);
-    const isWrong = isWrongEasy || isWrongMedium || isWrongHard;
+    const isWrong =
+      mode === 'test' &&
+      ((scenario === 'easy' && item.name !== missionItems[0]) ||
+        (scenario === 'medium' && !missionItems.includes(item.name)) ||
+        (scenario === 'hard' && !missionItems.includes(item.name)));
 
     const handlePress = () => {
-      if (isWrong) {
-        setShowErrorModal(true);
-        return;
-      }
-      let requiredType: 'set' | 'single';
-      if (scenario === 'easy') {
-        requiredType = 'single';
-      } else {
-        requiredType =
-          item.name === missionItems[0] ? 'set' : 'single';
-      }
-      navigation.navigate('ChooseSetOrSingle', {
-        selectedBurger: item.name,
-        singlePrice: priceNumber,
-        scenario,
-        missionItems,
-        requiredType,
-      });
-    };
+  if (mode === 'learn') {
+    if (scenario === 'medium' && item.name !== '빅맥') return;
+    if (scenario === 'hard') {
+      if ((currentStep === 0 || currentStep === 2) && item.name !== '빅맥') return;
+      if (currentStep === 1 && item.name !== '빅맥') return; // 단품도 이름은 빅맥
+    }
+  }
 
+  if (isWrong) {
+    setShowErrorModal(true);
+    return;
+  }
+
+  const requiredType: 'set' | 'single' = (() => {
+    if (mode === 'learn') {
+      if (scenario === 'medium') return 'set';
+      if (scenario === 'hard') {
+        if (currentStep === 0 || currentStep === 2) return 'set';
+        if (currentStep === 1) return 'single';
+      }
+    }
+    return scenario === 'easy'
+      ? 'single'
+      : item.name === missionItems[0]
+      ? 'set'
+      : 'single';
+  })();
+
+  const nextStep = mode === 'learn' && scenario === 'hard' && currentStep < 2
+    ? currentStep + 1
+    : undefined;
+
+  navigation.navigate('ChooseSetOrSingle', {
+    selectedBurger: item.name,
+    singlePrice: priceNumber,
+    scenario,
+    missionItems,
+    requiredType,
+    mode,
+    currentStep,
+  });
+};
     return (
-      <TouchableOpacity style={styles.burgerItem} onPress={handlePress}>
-        <Image
-          source={item.image}
-          style={styles.burgerImage}
-          resizeMode="contain"
-        />
-        <View style={styles.burgerInfo}>
+      <TouchableOpacity onPress={handlePress}>
+        <View
+          style={[
+            styles.burgerItem,
+            isHighlight(item.name) && styles.highlightedItem,
+          ]}
+        >
+          <Image source={item.image} style={styles.burgerImage} resizeMode="contain" />
           <Text style={styles.burgerName}>{item.name}</Text>
           <Text style={styles.burgerPrice}>
-            {item.price} {item.kcal && `(${item.kcal})`}
+            {item.price} {item.kcal ? `(${item.kcal})` : ''}
           </Text>
         </View>
       </TouchableOpacity>
@@ -135,223 +152,163 @@ export default function MenuScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 상단 로고 헤더 */}
+      {mode === 'learn' && (
+        <TouchableOpacity style={styles.homeBtn} onPress={() => navigation.navigate('KioskSelect')}>
+          <Image source={require('../assets/images/Home.png')} style={styles.homeIcon} />
+          <Text style={styles.homeText}>처음으로</Text>
+        </TouchableOpacity>
+      )}
+
       <View style={styles.header}>
-        <Image
-          source={require('../assets/images/md-logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
+        <Image source={require('../assets/images/md-logo.png')} style={styles.logo} resizeMode="contain" />
+      </View>
+
+      <View style={styles.titleWrapper}>
+        <Text style={styles.pageTitle}>버거</Text>
+        <Text style={styles.pageSubTitle}>아래에서 세부 메뉴를 확인하세요</Text>
+      </View>
+
+      <View style={styles.filterWrapper}>
+        {['전체', '치킨', '비프', '씨푸드', '불고기'].map((label, idx) => (
+          <TouchableOpacity key={idx} style={styles.filterBtn}>
+            <Text style={styles.filterText}>{label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <View style={styles.contentWrapper}>
+        <View style={styles.sideMenu}>
+          {sideMenuItems.map((item, i) => (
+            <TouchableOpacity key={i} style={styles.sideMenuItem}>
+              <Text style={styles.sideMenuText}>{item.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <FlatList
+          key={'2cols'}
+          numColumns={2}
+          data={burgerMenuItems}
+          renderItem={renderBurgerItem}
+          keyExtractor={(_, index) => index.toString()}
         />
       </View>
 
-      {/* 페이지 타이틀 */}
-      <View style={styles.titleContainer}>
-        <Text style={styles.pageTitle}>버거</Text>
-        <Text style={styles.pageSubtitle}>
-          아래에서 세부내용을 확인하세요.
-        </Text>
-      </View>
+      <Image
+        source={require('../assets/images/scrollbar.png')}
+        style={styles.scrollBar}
+        resizeMode="contain"
+      />
 
-      {/* 사이드바＋버거리스트 래퍼 */}
-      <View style={styles.content}>
-        <View style={styles.sideMenu}>
-          <FlatList<MenuItem>
-            data={sideMenuItems}
-            renderItem={renderSideMenuItem}
-            keyExtractor={(_, index) => index.toString()}
-          />
+      {shouldShowBubble() && (
+        <View style={styles.bubbleWrapper}>
+          <View style={styles.speechBubble}>
+            <Text style={styles.bubbleText}>빅맥 버거를 터치하세요</Text>
+          </View>
+          <View style={styles.triangleUp} />
         </View>
-        <View style={styles.burgerMenu}>
-          <FlatList<BurgerItem>
-            data={burgerMenuItems}
-            renderItem={renderBurgerItem}
-            keyExtractor={(_, index) => index.toString()}
-            numColumns={3}
-          />
-        </View>
-      </View>
+      )}
 
-      {/* 잘못된 선택 모달 */}
-      <Modal
-        transparent
-        animationType="fade"
-        visible={showErrorModal}
-        onRequestClose={() => setShowErrorModal(false)}
-      >
+      <TouchableOpacity style={styles.missionButton} onPress={() => setShowMissionModal(true)}>
+        <Text style={styles.missionButtonText}>미션 보기</Text>
+      </TouchableOpacity>
+
+      <Modal transparent animationType="fade" visible={showErrorModal} onRequestClose={() => setShowErrorModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalText}>잘못된 선택입니다</Text>
-            <Pressable
-              style={styles.modalButton}
-              onPress={() => setShowErrorModal(false)}
-            >
+            <Pressable style={styles.modalButton} onPress={() => setShowErrorModal(false)}>
               <Text style={styles.modalButtonText}>확인</Text>
             </Pressable>
           </View>
         </View>
       </Modal>
 
-      {/* 미션 보기 모달 */}
-      <Modal
-        transparent
-        animationType="slide"
-        visible={showMissionModal}
-        onRequestClose={() => setShowMissionModal(false)}
-      >
+      <Modal transparent animationType="slide" visible={showMissionModal} onRequestClose={() => setShowMissionModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalText}>{getMissionText()}</Text>
-            <Pressable
-              style={styles.modalButton}
-              onPress={() => setShowMissionModal(false)}
-            >
+            <Pressable style={styles.modalButton} onPress={() => setShowMissionModal(false)}>
               <Text style={styles.modalButtonText}>닫기</Text>
             </Pressable>
           </View>
         </View>
       </Modal>
-
-      {/* 오른쪽 하단 미션 보기 버튼 */}
-      <TouchableOpacity
-        style={styles.missionButton}
-        onPress={() => setShowMissionModal(true)}
-      >
-        <Text style={styles.missionButtonText}>미션 보기</Text>
-      </TouchableOpacity>
     </View>
   );
 }
 
-const styles = StyleSheet.create<{
-  container: ViewStyle;
-  sideMenu: ViewStyle;
-  sideMenuItem: ViewStyle;
-  sideMenuText: TextStyle;
-  burgerMenu: ViewStyle;
-  burgerItem: ViewStyle;
-  burgerImage: ImageStyle;
-  burgerInfo: ViewStyle;
-  burgerName: TextStyle;
-  burgerPrice: TextStyle;
-  modalOverlay: ViewStyle;
-  modalContent: ViewStyle;
-  modalText: TextStyle;
-  modalButton: ViewStyle;
-  modalButtonText: TextStyle;
-  header: ViewStyle;
-  logo: ImageStyle;
-  titleContainer: ViewStyle;
-  pageTitle: TextStyle;
-  pageSubtitle: TextStyle;
-  content: ViewStyle;
-  missionButton: ViewStyle;
-  missionButtonText: TextStyle;
-}>({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff' },
+  header: { height: 80, paddingHorizontal: 16, justifyContent: 'center' },
+  logo: { width: 140, height: 80 },
+  homeBtn: {
+    position: 'absolute', top: 60, right: 20, backgroundColor: '#fff',
+    paddingVertical: 6, paddingHorizontal: 12, flexDirection: 'row',
+    borderRadius: 8, borderWidth: 1, zIndex: 5, alignItems: 'center',
   },
-  header: {
-    height: 80,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-  },
-  logo: {
-    width: 140,
-    height: 80,
-  },
-  titleContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  pageTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  pageSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  content: {
-    flex: 1,
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginTop: 16,
-  },
-  sideMenu: {
-    width: 100,
-    backgroundColor: 'white',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  sideMenuItem: {
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  sideMenuText: {
-    fontSize: 12,
-  },
-  burgerMenu: {
-    flex: 1,
+  homeIcon: { width: 20, height: 20, marginRight: 6 },
+  homeText: { fontSize: 14, fontWeight: 'bold', color: '#000' },
+  titleWrapper: { paddingHorizontal: 16, marginBottom: 12 },
+  pageTitle: { fontSize: 26, fontWeight: 'bold' },
+  pageSubTitle: { fontSize: 13, marginTop: 4 },
+  filterWrapper: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingLeft: 16,
-    justifyContent: 'flex-start',
+    paddingHorizontal: 16,
+    rowGap: 8,
+    columnGap: 8,
+    marginBottom: 12,
   },
-  burgerItem: {
-    width: '30%',
-    margin: '1.5%',
-    backgroundColor: '#fff',
-    padding: 10,
-    alignItems: 'center',
+  filterBtn: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 10,
-  },
-  burgerImage: {
-    width: 70,
-    height: 70,
-    marginTop: 5,
-  },
-  burgerInfo: {
-    alignItems: 'flex-start',
-  },
-  burgerName: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  burgerPrice: {
-    fontSize: 10,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-   	alignItems: 'center',
-  },
-  modalContent: {
-    width: 280,
+    borderColor: '#000',
+    borderRadius: 20,
+    paddingVertical: 5,
+    paddingHorizontal: 14,
     backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 20,
+  },
+  filterText: { fontSize: 13, fontWeight: '600' },
+  contentWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+  },
+  sideMenu: {
+    width: 80,
+    paddingTop: 8,
+    borderRightWidth: 1,
+    borderColor: '#ccc',
+  },
+  sideMenuItem: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+  },
+  sideMenuText: { fontSize: 12, textAlign: 'center' },
+  burgerItem: {
+    width: width / 3.5,
+    margin: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 12,
+    padding: 10,
+    backgroundColor: '#fff',
     alignItems: 'center',
   },
-  modalText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
+  highlightedItem: {
+    borderColor: '#FF3366',
+    borderWidth: 2,
   },
-  modalButton: {
-    backgroundColor: '#28a745',
-    borderRadius: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontSize: 14,
+  burgerImage: { width: 60, height: 60, marginBottom: 6 },
+  burgerName: { fontSize: 12, fontWeight: 'bold', textAlign: 'center' },
+  burgerPrice: { fontSize: 11, color: '#666' },
+  scrollBar: {
+    position: 'absolute',
+    right: -15,
+    top: height * 0.28,
+    width: 90,
+    height: 250,
   },
   missionButton: {
     position: 'absolute',
@@ -367,5 +324,60 @@ const styles = StyleSheet.create<{
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: 280,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalText: { fontSize: 16, textAlign: 'center', marginBottom: 20 },
+  modalButton: {
+    backgroundColor: '#28a745',
+    borderRadius: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  modalButtonText: { color: '#fff', fontSize: 14 },
+
+  
+  bubbleWrapper: {
+    position: 'absolute',
+    top: height * 0.4,
+    left: width * 0.25,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  speechBubble: {
+    backgroundColor: '#fff',
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#000',
+    maxWidth: width * 0.5,
+  },
+  bubbleText: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#000',
+  },
+  triangleUp: {
+    width: 12,
+    height: 12,
+    top: '-90%',
+    right: '10%', 
+    backgroundColor: '#fff',
+    transform: [{ rotate: '45deg' }],
+    marginTop: -6,
+    borderLeftWidth: 2,
+    borderTopWidth: 2,
+    borderColor: '#000',
   },
 });

@@ -45,24 +45,27 @@ export default function KioskSelectScreen() {
 
   const handleSelect = (id: number) => {
     if (id === 1) {
-      // “시험 난이도 선택” 화면으로 이동
-      navigation.navigate('TestDifficulty');
+      navigation.navigate('LearningMethod');
     } else {
-      Alert.alert('알림', '아직 준비되지 않은 키오스크입니다.');
+      Alert.alert('해당 기능은 아직 지원되지 않습니다.');
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <Text style={styles.title}>학습하고 싶은 키오스크를 선택하세요!</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>사용할 키오스크를 선택하세요</Text>
       <View style={styles.grid}>
         {kiosks.map((kiosk) => (
           <TouchableOpacity
             key={kiosk.id}
-            style={styles.button}
+            style={styles.item}
             onPress={() => handleSelect(kiosk.id)}
           >
-            <Image source={kiosk.image} style={styles.image} />
+            <Image
+              source={kiosk.image}
+              style={styles.image}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
         ))}
       </View>
@@ -70,45 +73,31 @@ export default function KioskSelectScreen() {
   );
 }
 
-const styles = StyleSheet.create<{
-  scrollContainer: ViewStyle;
-  title: TextStyle;
-  grid: ViewStyle;
-  button: ViewStyle;
-  image: ImageStyle;
-}>({
-  scrollContainer: {
-    alignItems: 'center',
-    paddingVertical: 50,
-    backgroundColor: '#fff',
-  },
+const styles = StyleSheet.create({
+  container: {
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+    backgroundColor: 'white',
+  } as ViewStyle,
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 30,
-  },
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  } as TextStyle,
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  button: {
+    justifyContent: 'space-between',
+  } as ViewStyle,
+  item: {
     width: itemSize,
-    height: itemSize,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    margin: 10,
-    justifyContent: 'center',
+    height: itemSize + 30,
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 2, height: 2 },
-    shadowRadius: 3,
-  },
+    marginBottom: 30,
+  } as ViewStyle,
   image: {
-    width: '90%',
-    height: '90%',
-    resizeMode: 'contain',
-  },
+    width: '100%',
+    height: itemSize,
+  } as ImageStyle,
 });

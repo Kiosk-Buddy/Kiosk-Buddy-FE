@@ -42,6 +42,7 @@ const [setItem, singleItem, sideItem, drinkItem, extraItem] = fullMissions;
     navigation.navigate('Menu', {
       scenario,
       missionItems: fullMissions,  // 이렇게 5개짜리 넘겨 줌
+      mode: 'test',
     });
   };
 

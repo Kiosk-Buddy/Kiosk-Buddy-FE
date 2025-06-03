@@ -23,7 +23,7 @@ export default function SetOrderScenario() {
 
   // 시작 시 Menu 화면으로 missionItems 배열 전체를 전달합니다
   const handleStart = () => {
-    navigation.navigate('Menu', { scenario, missionItems });
+    navigation.navigate('Menu', { scenario, missionItems, mode: 'test'});
   };
 
   return (

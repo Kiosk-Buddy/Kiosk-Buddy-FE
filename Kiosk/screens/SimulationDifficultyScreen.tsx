@@ -1,10 +1,30 @@
-// SimulationDifficultyScreen.tsx
+// src/screens/SimulationDifficultyScreen.tsx
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Platform } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
 
-export default function SimulationDifficultyScreen({ navigation }: any) {
+export default function SimulationDifficultyScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const handleSelect = (level: string) => {
-    // TODO: 난이도별 학습 화면 이동 (예: navigation.navigate('LearnEasy'))
+    console.log('[handleSelect] 선택한 레벨:', level);
+    const scenario = level === '쉬움' ? 'easy' : level === '중간' ? 'medium' : 'hard';
+
+    if (level === '쉬움') {
+      navigation.navigate('LearnEasy_HomeScreen');
+    } else if (level === '중간') {
+      navigation.navigate('Home', {
+        scenario,
+        mode: 'learn', 
+      });
+    } else {
+      navigation.navigate('Home', {
+        scenario,
+        mode: 'learn', 
+      });
+    }
   };
 
   return (
@@ -17,7 +37,6 @@ export default function SimulationDifficultyScreen({ navigation }: any) {
 
       <View style={styles.box}>
         <Text style={styles.title}>학습 난이도</Text>
-
         {['쉬움', '중간', '어려움'].map((label, index) => (
           <TouchableOpacity
             key={index}
@@ -34,7 +53,11 @@ export default function SimulationDifficultyScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 20 },
-  header: { height: 60, justifyContent: 'center' },
+  header: {
+    height: 60,
+    justifyContent: 'center',
+    marginTop: Platform.OS === 'ios' ? 60 : 30,
+  },
   icon: { width: 24, height: 24 },
   box: {
     backgroundColor: '#eee',

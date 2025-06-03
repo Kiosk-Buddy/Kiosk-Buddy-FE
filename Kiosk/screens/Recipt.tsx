@@ -34,7 +34,7 @@ export default function ReciptScreen() {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('OrderComplete')}
+          onPress={() => navigation.navigate('Counter')}
         >
           <Text style={styles.buttonText}>다음단계</Text>
         </TouchableOpacity>
