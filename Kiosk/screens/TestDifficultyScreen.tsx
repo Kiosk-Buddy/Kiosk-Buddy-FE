@@ -1,4 +1,5 @@
 // src/screens/TestDifficultyScreen.tsx
+
 import React from 'react';
 import {
   View,
@@ -6,7 +7,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,7 +15,7 @@ import { burgerMenuItems } from './burgerMenu';
 
 type NavProp = NativeStackNavigationProp<
   RootStackParamList,
-  'TestDifficultyScreen'
+  'TestDifficulty'
 >;
 
 export default function TestDifficultyScreen() {
@@ -31,33 +31,43 @@ export default function TestDifficultyScreen() {
       label === '쉬움' ? 'easy' : label === '중간' ? 'medium' : 'hard';
 
     if (label === '쉬움') {
-      navigation.navigate('SingleOrderScenario', { scenario, missionItems: [pickRandomBurger()], mode: 'test', });
+      const missionItems = [pickRandomBurger()];
+      navigation.navigate('SingleOrderScenario', { scenario, missionItems });
     } else if (label === '중간') {
-      navigation.navigate('SetOrderScenario', {
-      scenario,
-      missionItems: [pickRandomBurger(), pickRandomBurger()],
-      mode: 'test',
-    });
+      let firstBurger = pickRandomBurger();
+      let secondBurger: string;
+      do {
+        secondBurger = pickRandomBurger();
+      } while (secondBurger === firstBurger);
 
+      const missionItems = [firstBurger, secondBurger];
+      navigation.navigate('SetOrderScenario', { scenario, missionItems });
     } else {
-      const names = burgerMenuItems.map(b => b.name);
-      const shuffled = [...names].sort(() => Math.random() - 0.5);
-      const [burgerA, burgerB] = shuffled.slice(0, 2);
+      let firstBurger = pickRandomBurger();
+      let secondBurger: string;
+      do {
+        secondBurger = pickRandomBurger();
+      } while (secondBurger === firstBurger);
 
       const sides = ['감자튀김', '코울슬로'];
       const drinks = ['콜라', '사이다'];
       const extras = ['치즈 스틱'];
+
       const side = sides[Math.floor(Math.random() * sides.length)];
       const drink = drinks[Math.floor(Math.random() * drinks.length)];
       const extra = extras[0];
 
-      const missionItemsForHard = [burgerA, burgerB, side, drink, extra];
+      const missionItemsForHard: [string, string, string, string, string] = [
+        firstBurger,
+        secondBurger,
+        side,
+        drink,
+        extra,
+      ];
       navigation.navigate('FullOrderScenario', {
-      scenario,
-      missionItems: missionItemsForHard,
-      mode: 'test',
-      
-    });
+        scenario,
+        missionItems: missionItemsForHard,
+      });
     }
   };
 
@@ -86,11 +96,19 @@ export default function TestDifficultyScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    justifyContent: 'center',   // 세로 중앙 정렬
+    alignItems: 'center',       // 가로 중앙 정렬
+  },
   header: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
     height: 60,
     justifyContent: 'center',
-    marginTop: Platform.OS === 'ios' ? 60 : 30, // ✅ 상단 마진
   },
   icon: { width: 24, height: 24 },
   box: {
@@ -98,9 +116,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 30,
     alignItems: 'center',
-    marginTop: 40,
+    width: '100%',
+    maxWidth: 300,
   },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   btn: {
     width: '80%',
     paddingVertical: 15,

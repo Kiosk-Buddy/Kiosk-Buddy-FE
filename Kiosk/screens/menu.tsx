@@ -1,5 +1,6 @@
-// src/screens/menu.tsx
-import React, { useState } from 'react';
+// src/screens/MenuScreen.tsx
+
+import React from 'react';
 import {
   View,
   Text,
@@ -14,6 +15,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
+import { useCart, CartItem } from '../contexts/CartContext';
 import { burgerMenuItems } from './burgerMenu';
 
 const { width, height } = Dimensions.get('window');
@@ -23,12 +25,21 @@ type MenuRoute = RouteProp<RootStackParamList, 'Menu'>;
 
 interface MenuItem {
   name: string;
+  price: string;
+  kcal?: string;
+  image: any;
 }
 
 const sideMenuItems: MenuItem[] = [
-  { name: '홈' }, { name: '추천 메뉴' }, { name: '버거' },
-  { name: '해피밀' }, { name: '사이드' }, { name: '커피' },
-  { name: '디저트' }, { name: '음료' }, { name: '해피 스낵' },
+  { name: '홈' },
+  { name: '추천 메뉴' },
+  { name: '버거' },
+  { name: '해피밀' },
+  { name: '사이드' },
+  { name: '커피' },
+  { name: '디저트' },
+  { name: '음료' },
+  { name: '해피 스낵' },
 ];
 
 export default function MenuScreen() {
@@ -37,11 +48,14 @@ export default function MenuScreen() {
     scenario = 'easy',
     missionItems = [],
     mode = 'test',
-    currentStep = 0, // learn-hard
+    currentStep = 0,
   } = useRoute<MenuRoute>().params;
 
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [showMissionModal, setShowMissionModal] = useState(false);
+  // Context에서 cartItems만 가져옵니다.
+  const { cartItems } = useCart();
+
+  const [showErrorModal, setShowErrorModal] = React.useState(false);
+  const [showMissionModal, setShowMissionModal] = React.useState(false);
 
   const getMissionText = () => {
     if (mode === 'learn') {
@@ -69,7 +83,7 @@ export default function MenuScreen() {
     }
     if (scenario === 'hard') {
       if (currentStep === 0 || currentStep === 2) return itemName === '빅맥';
-      if (currentStep === 1) return itemName === '빅맥'; // 단품이지만 이름 같음
+      if (currentStep === 1) return itemName === '빅맥';
     }
     return false;
   };
@@ -81,8 +95,9 @@ export default function MenuScreen() {
     return false;
   };
 
-  const renderBurgerItem = ({ item }: any) => {
+  const renderBurgerItem = ({ item }: { item: MenuItem }) => {
     const priceNumber = Number(item.price.replace(/\D/g, ''));
+
     const isWrong =
       mode === 'test' &&
       ((scenario === 'easy' && item.name !== missionItems[0]) ||
@@ -90,48 +105,62 @@ export default function MenuScreen() {
         (scenario === 'hard' && !missionItems.includes(item.name)));
 
     const handlePress = () => {
-  if (mode === 'learn') {
-    if (scenario === 'medium' && item.name !== '빅맥') return;
-    if (scenario === 'hard') {
-      if ((currentStep === 0 || currentStep === 2) && item.name !== '빅맥') return;
-      if (currentStep === 1 && item.name !== '빅맥') return; // 단품도 이름은 빅맥
-    }
-  }
-
-  if (isWrong) {
-    setShowErrorModal(true);
-    return;
-  }
-
-  const requiredType: 'set' | 'single' = (() => {
-    if (mode === 'learn') {
-      if (scenario === 'medium') return 'set';
-      if (scenario === 'hard') {
-        if (currentStep === 0 || currentStep === 2) return 'set';
-        if (currentStep === 1) return 'single';
+      // “미션 대상 + 이미 장바구니에 담겼는지” 검사
+      // 'ci.name.includes(item.name)' 으로 바꿔서
+      // “부분 문자열 일치”도 에러로 처리합니다.
+      const alreadyInCart = cartItems.some(ci => ci.name.includes(item.name));
+      if (missionItems.includes(item.name) && alreadyInCart) {
+        setShowErrorModal(true);
+        return;
       }
-    }
-    return scenario === 'easy'
-      ? 'single'
-      : item.name === missionItems[0]
-      ? 'set'
-      : 'single';
-  })();
 
-  const nextStep = mode === 'learn' && scenario === 'hard' && currentStep < 2
-    ? currentStep + 1
-    : undefined;
+      // 학습 모드 제한 로직
+      if (mode === 'learn') {
+        if (scenario === 'medium' && item.name !== '빅맥') return;
+        if (scenario === 'hard') {
+          if ((currentStep === 0 || currentStep === 2) && item.name !== '빅맥') return;
+          if (currentStep === 1 && item.name !== '빅맥') return;
+        }
+      }
 
-  navigation.navigate('ChooseSetOrSingle', {
-    selectedBurger: item.name,
-    singlePrice: priceNumber,
-    scenario,
-    missionItems,
-    requiredType,
-    mode,
-    currentStep,
-  });
-};
+      // 테스트 모드 잘못된 선택 검사
+      if (isWrong) {
+        setShowErrorModal(true);
+        return;
+      }
+
+      // 하드 모드 학습의 다음 스텝 계산 (필요하면)
+      const nextStep =
+        mode === 'learn' && scenario === 'hard' && currentStep < 2
+          ? currentStep + 1
+          : undefined;
+
+      // ChooseSetOrSingle 화면으로 이동
+      navigation.navigate('ChooseSetOrSingle', {
+        selectedBurger: item.name,
+        singlePrice: priceNumber,
+        scenario,
+        missionItems,
+        requiredType: (() => {
+          if (mode === 'learn') {
+            if (scenario === 'medium') return 'set';
+            if (scenario === 'hard') {
+              if (currentStep === 0 || currentStep === 2) return 'set';
+              if (currentStep === 1) return 'single';
+            }
+          }
+          return scenario === 'easy'
+            ? 'single'
+            : item.name === missionItems[0]
+            ? 'set'
+            : 'single';
+        })(),
+        mode,
+        currentStep,
+        nextStep,
+      });
+    };
+
     return (
       <TouchableOpacity onPress={handlePress}>
         <View
@@ -140,7 +169,11 @@ export default function MenuScreen() {
             isHighlight(item.name) && styles.highlightedItem,
           ]}
         >
-          <Image source={item.image} style={styles.burgerImage} resizeMode="contain" />
+          <Image
+            source={item.image}
+            style={styles.burgerImage}
+            resizeMode="contain"
+          />
           <Text style={styles.burgerName}>{item.name}</Text>
           <Text style={styles.burgerPrice}>
             {item.price} {item.kcal ? `(${item.kcal})` : ''}
@@ -153,14 +186,24 @@ export default function MenuScreen() {
   return (
     <View style={styles.container}>
       {mode === 'learn' && (
-        <TouchableOpacity style={styles.homeBtn} onPress={() => navigation.navigate('KioskSelect')}>
-          <Image source={require('../assets/images/Home.png')} style={styles.homeIcon} />
+        <TouchableOpacity
+          style={styles.homeBtn}
+          onPress={() => navigation.navigate('KioskSelect')}
+        >
+          <Image
+            source={require('../assets/images/Home.png')}
+            style={styles.homeIcon}
+          />
           <Text style={styles.homeText}>처음으로</Text>
         </TouchableOpacity>
       )}
 
       <View style={styles.header}>
-        <Image source={require('../assets/images/md-logo.png')} style={styles.logo} resizeMode="contain" />
+        <Image
+          source={require('../assets/images/md-logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
       </View>
 
       <View style={styles.titleWrapper}>
@@ -209,26 +252,47 @@ export default function MenuScreen() {
         </View>
       )}
 
-      <TouchableOpacity style={styles.missionButton} onPress={() => setShowMissionModal(true)}>
+      <TouchableOpacity
+        style={styles.missionButton}
+        onPress={() => setShowMissionModal(true)}
+      >
         <Text style={styles.missionButtonText}>미션 보기</Text>
       </TouchableOpacity>
 
-      <Modal transparent animationType="fade" visible={showErrorModal} onRequestClose={() => setShowErrorModal(false)}>
+      {/* 잘못된 선택 모달 */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={showErrorModal}
+        onRequestClose={() => setShowErrorModal(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalText}>잘못된 선택입니다</Text>
-            <Pressable style={styles.modalButton} onPress={() => setShowErrorModal(false)}>
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => setShowErrorModal(false)}
+            >
               <Text style={styles.modalButtonText}>확인</Text>
             </Pressable>
           </View>
         </View>
       </Modal>
 
-      <Modal transparent animationType="slide" visible={showMissionModal} onRequestClose={() => setShowMissionModal(false)}>
+      {/* 미션 보기 모달 */}
+      <Modal
+        transparent
+        animationType="slide"
+        visible={showMissionModal}
+        onRequestClose={() => setShowMissionModal(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalText}>{getMissionText()}</Text>
-            <Pressable style={styles.modalButton} onPress={() => setShowMissionModal(false)}>
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => setShowMissionModal(false)}
+            >
               <Text style={styles.modalButtonText}>닫기</Text>
             </Pressable>
           </View>
@@ -243,9 +307,17 @@ const styles = StyleSheet.create({
   header: { height: 80, paddingHorizontal: 16, justifyContent: 'center' },
   logo: { width: 140, height: 80 },
   homeBtn: {
-    position: 'absolute', top: 60, right: 20, backgroundColor: '#fff',
-    paddingVertical: 6, paddingHorizontal: 12, flexDirection: 'row',
-    borderRadius: 8, borderWidth: 1, zIndex: 5, alignItems: 'center',
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    backgroundColor: '#fff',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    borderRadius: 8,
+    borderWidth: 1,
+    zIndex: 5,
+    alignItems: 'center',
   },
   homeIcon: { width: 20, height: 20, marginRight: 6 },
   homeText: { fontSize: 14, fontWeight: 'bold', color: '#000' },
@@ -310,6 +382,38 @@ const styles = StyleSheet.create({
     width: 90,
     height: 250,
   },
+  bubbleWrapper: {
+    position: 'absolute',
+    top: height * 0.4,
+    left: width * 0.25,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  speechBubble: {
+    backgroundColor: '#fff',
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#000',
+    maxWidth: width * 0.5,
+  },
+  bubbleText: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#000',
+  },
+  triangleUp: {
+    width: 12,
+    height: 12,
+    top: '-90%',
+    right: '10%',
+    backgroundColor: '#fff',
+    transform: [{ rotate: '45deg' }],
+    marginTop: -6,
+    borderLeftWidth: 2,
+    borderTopWidth: 2,
+    borderColor: '#000',
+  },
   missionButton: {
     position: 'absolute',
     bottom: 20,
@@ -346,38 +450,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   modalButtonText: { color: '#fff', fontSize: 14 },
-
-  
-  bubbleWrapper: {
-    position: 'absolute',
-    top: height * 0.4,
-    left: width * 0.25,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  speechBubble: {
-    backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#000',
-    maxWidth: width * 0.5,
-  },
-  bubbleText: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: '#000',
-  },
-  triangleUp: {
-    width: 12,
-    height: 12,
-    top: '-90%',
-    right: '10%', 
-    backgroundColor: '#fff',
-    transform: [{ rotate: '45deg' }],
-    marginTop: -6,
-    borderLeftWidth: 2,
-    borderTopWidth: 2,
-    borderColor: '#000',
-  },
 });

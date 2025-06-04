@@ -29,16 +29,17 @@ const spriteIcon: ImageSourcePropType = require('../assets/images/sprite.png');
 const cheeseIcon: ImageSourcePropType = require('../assets/images/cheesesticks.png');
 
 export default function SelectSetDetailsScreen({ navigation, route }: Props) {
-  // scenario, missionItems를 함께 꺼냅니다
- const {
-   selectedBurger,
-   setPrice,
-   scenario,
-   missionItems,
-   requiredSide,
-   requiredDrink,
-   requiredExtra,
- } = route.params;
+  // route.params로 전달된 값들
+  const {
+    selectedBurger,
+    setPrice,
+    scenario,
+    missionItems,
+    requiredSide,   // 예: '감자튀김'
+    requiredDrink,  // 예: '콜라'
+    requiredExtra,  // 예: '치즈 스틱' 또는 ''(추가 옵션 없음)
+  } = route.params;
+
   const { addToCart } = useCart();
 
   const [fries, setFries] = useState<string>('');
@@ -46,26 +47,50 @@ export default function SelectSetDetailsScreen({ navigation, route }: Props) {
   const [extra, setExtra] = useState<string>('');
   const [showErrorModal, setShowErrorModal] = useState(false);
 
+  // 기본 세트 가격(ChooseSetOrSingle에서 전달된 setPrice가 없으면 6200원으로 처리)
   const basePrice = setPrice ?? 6200;
+  // 추가 옵션 가격 맵 (현재 '치즈 스틱'만 유료)
   const extraPrices: Record<string, number> = { '치즈 스틱': 3500 };
   const addedExtra = extraPrices[extra] || 0;
   const totalPrice = basePrice + addedExtra;
 
   const handleConfirm = () => {
-   // 1) 사이드와 음료 반드시 선택됐는지
-   if (!fries || !drink) return;
-   // 2) 미션과 정확히 일치하는지 검사
-   if (fries !== requiredSide || drink !== requiredDrink || extra !== requiredExtra) {
-     setShowErrorModal(true);
-     return;
-   }
-   // 3) 올바른 선택일 때만 장바구니 추가
-   const items = [fries, drink, extra].filter(Boolean);
-   const itemName = `${selectedBurger} 세트 (${items.join(' + ')})`;
-   addToCart({ name: itemName, price: totalPrice });
-   navigation.navigate('Cart', { scenario, missionItems });
- };
+    // 0) 사이드/음료이 두 개는 반드시 선택되어 있어야 함
+    if (!fries || !drink) {
+      // 버튼을 비활성화해두었다면 도달할 일은 없지만, 안전하게 리턴
+      return;
+    }
 
+    // 1) “선택된 사이드가 미션에 지정된 requiredSide와 동일하지 않으면” 에러
+    if (fries !== requiredSide) {
+      setShowErrorModal(true);
+      return;
+    }
+
+    // 2) “선택된 음료가 미션에 지정된 requiredDrink와 동일하지 않으면” 에러
+    if (drink !== requiredDrink) {
+      setShowErrorModal(true);
+      return;
+    }
+
+    // 3) “추가 옵션(requiredExtra)” 검사:
+    //    requiredExtra가 빈 문자열("")인 경우 → 사용자가 extra도 ''(선택 안함)이어야 통과
+    //    requiredExtra가 non-empty인 경우 → 사용자가 반드시 같은 값을 골라야 통과
+    const shouldMatchExtra = requiredExtra === '' ? extra === '' : extra === requiredExtra;
+    if (!shouldMatchExtra) {
+      setShowErrorModal(true);
+      return;
+    }
+
+    // 위 세 가지 모두 통과했을 때만 장바구니에 추가
+    const items = [fries, drink, extra].filter(item => item !== '');
+    const itemName = `${selectedBurger} 세트 (${items.join(' + ')})`;
+
+    addToCart({ name: itemName, price: totalPrice });
+    navigation.navigate('Cart', { scenario, missionItems });
+  };
+
+  // 옵션 카드 렌더링 함수 (기존 코드와 동일)
   const renderOption = (
     icon: ImageSourcePropType | null,
     label: string,
@@ -98,7 +123,7 @@ export default function SelectSetDetailsScreen({ navigation, route }: Props) {
         </Text>
       </View>
 
-      {/* 사이드 선택 */}
+      {/* ① 사이드 선택 */}
       <View style={styles.instructionBox}>
         <View style={styles.instructionHighlight} />
         <Text style={styles.instructionText}>세트메뉴 사이드를 선택하세요</Text>
@@ -120,7 +145,7 @@ export default function SelectSetDetailsScreen({ navigation, route }: Props) {
 
       <View style={styles.divider} />
 
-      {/* 음료 선택 */}
+      {/* ② 음료 선택 */}
       <View style={styles.instructionBox}>
         <View style={styles.instructionHighlight} />
         <Text style={styles.instructionText}>세트메뉴 음료를 선택하세요</Text>
@@ -142,7 +167,7 @@ export default function SelectSetDetailsScreen({ navigation, route }: Props) {
 
       <View style={styles.divider} />
 
-      {/* 추가 제품 선택 */}
+      {/* ③ 추가 제품 선택 */}
       <View style={styles.instructionBox}>
         <View style={styles.instructionHighlight} />
         <Text style={styles.instructionText}>추가제품을 선택하세요</Text>
@@ -158,6 +183,7 @@ export default function SelectSetDetailsScreen({ navigation, route }: Props) {
         )}
       </View>
 
+      {/* ④ 확인 버튼 (사이드/음료 둘 다 선택되지 않았다면 disabled) */}
       <TouchableOpacity
         style={[
           styles.confirmBtn,
@@ -281,19 +307,19 @@ const styles = StyleSheet.create<{
    justifyContent: 'center',
    alignItems: 'center',
  },
- modalContent: {
+  modalContent: {
    width: 250,
    backgroundColor: '#fff',
    borderRadius: 8,
    padding: 20,
    alignItems: 'center',
  },
- modalText: { fontSize: 18, marginBottom: 20 },
- modalButton: {
+  modalText: { fontSize: 18, marginBottom: 20 },
+  modalButton: {
    backgroundColor: '#28a745',
    borderRadius: 5,
    paddingHorizontal: 20,
    paddingVertical: 8,
  },
- modalButtonText: { color: '#fff', fontSize: 16 },
+  modalButtonText: { color: '#fff', fontSize: 16 },
 } );
