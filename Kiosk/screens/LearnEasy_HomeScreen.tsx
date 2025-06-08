@@ -222,7 +222,8 @@ const styles = StyleSheet.create({
   },
   triangle: {
     width: 14,
-    height: 14,
+    height: 12,
+    right: 15,
     backgroundColor: '#fff',
     transform: [{ rotate: '45deg' }],
     marginTop: -6,

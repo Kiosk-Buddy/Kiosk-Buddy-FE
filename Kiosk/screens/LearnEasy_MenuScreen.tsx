@@ -193,7 +193,7 @@ export default function LearnEasy_MenuScreen() {
 
         {/* 오른쪽 전체 영역 */}
         <View style={{ flex: 1, paddingLeft: 10, paddingRight: 20 }}>
-          {/* 상단: 로고 + 처음으로 (항상 밝게 유지) */}
+          {/* 상단: 로고 + 처음으로 버튼 */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 40 }}>
             <Image
               source={require('../assets/images/md-logo.png')}

@@ -19,7 +19,7 @@ import { useCart, CartItem } from '../contexts/CartContext';
 type Props = NativeStackScreenProps<RootStackParamList, 'Cart'>;
 
 export default function CartScreen({ route, navigation }: Props) {
-  const { scenario, missionItems } = route.params;
+  const { scenario, missionItems = [] } = route.params;
   const 난이도한글 = { easy: '쉬움', medium: '중간', hard: '어려움' }[scenario];
 
   const { cartItems, clearCart } = useCart();

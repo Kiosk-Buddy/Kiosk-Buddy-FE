@@ -15,7 +15,7 @@ import { burgerMenuItems } from './burgerMenu';
 
 type NavProp = NativeStackNavigationProp<
   RootStackParamList,
-  'TestDifficulty'
+  'TestDifficultyScreen'
 >;
 
 export default function TestDifficultyScreen() {
